@@ -1,69 +1,154 @@
-<?php
-require_once '../../app/db.php';
+    <?php
+    require_once '../../app/db.php';
+    include 'partials/header.php';
 
-$db = connectMongoDB();
-$collection = $db->NewsOne;
+    $db = connectMongoDB();
 
-$newsList = $collection->find();
+    $newsCollection = $db->NewsOne;
+    $categoryCollection = $db->Category;
 
-$newsArray = iterator_to_array($newsList);
-?>
+    $newsList = $newsCollection->find([], ['sort' => ['created_at' => -1]]);
+    $newsArray = iterator_to_array($newsList);
+    $latestNews = array_slice($newsArray, 0, 3);
 
-<!DOCTYPE html>
-<html lang="en">
+    $categoryList = $categoryCollection->find([]);
+    $categoryArray = iterator_to_array($categoryList);
+    ?>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>News Website</title>
-</head>
+    <!-- CAROUSEL -->
+    <div class="inti_carousel">
+        <div id="carouselExampleCaptions" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-indicators">
+                <?php foreach ($latestNews as $index => $news): ?>
+                    <button type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide-to="<?= $index ?>" class="<?= $index === 0 ? 'active' : '' ?>" aria-current="true" aria-label="Slide <?= $index + 1 ?>"></button>
+                <?php endforeach; ?>
+            </div>
+            <div class="carousel-inner">
+                <?php foreach ($latestNews as $index => $news): ?>
+                    <div class="carousel-item <?= $index === 0 ? 'active' : '' ?>">
+                        <div class="carousel-image-container position-relative">
+                            <img src="<?= htmlspecialchars($news['image'] ?? '/api/placeholder/800/400') ?>" class="d-block w-100" alt="<?= htmlspecialchars($news['title']) ?>" style="height: auto; object-fit: cover;">
 
-<body>
-    <h1>Latest News</h1>
-
-    <nav>
-        <a href="index.php">Home</a>
-    </nav>
-
-    <?php if (empty($newsArray)): ?>
-        <p>No news found.</p>
-    <?php else: ?>
-        <div>
-            <?php foreach ($newsArray as $news): ?>
-                <div style="border: 1px solid #ddd; margin-bottom: 20px; padding: 10px;">
-                    <h2><?= htmlspecialchars($news['title']) ?></h2>
-                    <p><strong>Author:</strong> <?= htmlspecialchars($news['author']) ?></p>
-                    <p><strong>Published Date:</strong>
-                        <?php
-                        if (isset($news['created_at'])) {
-                            if ($news['created_at'] instanceof MongoDB\BSON\UTCDateTime) {
-                                $date = $news['created_at']->toDateTime();
-                                echo $date->format('Y-m-d H:i:s');
-                            } elseif (is_numeric($news['created_at'])) {
-                                $date = new DateTime();
-                                $date->setTimestamp($news['created_at'] / 1000); // Convert milliseconds to seconds
-                                echo $date->format('Y-m-d H:i:s');
-                            } else {
-                                echo "Invalid Date Format";
-                            }
-                        } else {
-                            echo "Date Not Set";
-                        }
-                        ?>
-                    </p>
-
-                    <?php if (!empty($news['image'])): ?>
-                        <img src="<?= htmlspecialchars($news['image']) ?>" alt="News Image" width="100"><br><br>
-                    <?php endif; ?>
-
-                    <p><strong>Summary:</strong> <?= htmlspecialchars($news['summary']) ?></p>
-
-                    <a href="read.php?id=<?= $news['_id'] ?>">Read Full Article</a>
-                </div>
-            <?php endforeach; ?>
+                            <div class="overlay"></div>
+                        </div>
+                        <div class="carousel-caption d-none d-md-block text-left">
+                            <a href="detail.php?id=<?= $news['_id'] ?>" class="news-title-link">
+                                <h3><?= htmlspecialchars($news['title']) ?></h3>
+                            </a>
+                            <p><?= htmlspecialchars($news['summary']) ?></p>
+                            <small class="text-light">
+                                <?php
+                                if (isset($news['created_at'])) {
+                                    if ($news['created_at'] instanceof MongoDB\BSON\UTCDateTime) {
+                                        $date = $news['created_at']->toDateTime();
+                                        echo $date->format('Y-m-d H:i:s');
+                                    } elseif (is_numeric($news['created_at'])) {
+                                        $date = new DateTime();
+                                        $date->setTimestamp($news['created_at'] / 1000);
+                                        echo $date->format('Y-m-d H:i:s');
+                                    } else {
+                                        echo "Invalid Date Format";
+                                    }
+                                } else {
+                                    echo "Date Not Set";
+                                }
+                                ?>
+                            </small>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
         </div>
-    <?php endif; ?>
+    </div>
 
-</body>
+    <div class="container content">
+        <!-- LATEST NEWS -->
+        <div class="d-flex align-items-center mb-5">
+            <div class="flex-grow-1 border-top border-2"></div>
+            <h1 class="px-3">Latest News</h1>
+            <div class="flex-grow-1 border-top border-2"></div>
+        </div>
 
-</html>
+        <div class="row g-4">
+            <?php if (empty($newsArray)): ?>
+                <p>No news found.</p>
+            <?php else: ?>
+                <?php
+                $newsArrayLimited = array_slice($newsArray, 0, 6);
+                ?>
+
+                <?php foreach ($newsArrayLimited as $news): ?>
+                    <div class="col-md-4">
+                        <div class="card card-margin">
+                            <?php if (!empty($news['image'])): ?>
+                                <img src="<?= htmlspecialchars($news['image']) ?>" class="card-img-top" alt="News Image">
+                            <?php else: ?>
+                                <img src="/api/placeholder/400/250" class="card-img-top" alt="Placeholder Image">
+                            <?php endif; ?>
+
+                            <div class="card">
+                                <h5 class="card-title"><?= htmlspecialchars($news['title']) ?></h5>
+                                <p class="card-text"><?= htmlspecialchars($news['summary']) ?></p>
+                                <p class="text-muted">
+                                    <small>
+                                        Published:
+                                        <?php
+                                        if (isset($news['created_at'])) {
+                                            if ($news['created_at'] instanceof MongoDB\BSON\UTCDateTime) {
+                                                $date = $news['created_at']->toDateTime();
+                                                echo $date->format('Y-m-d H:i:s');
+                                            } elseif (is_numeric($news['created_at'])) {
+                                                $date = new DateTime();
+                                                $date->setTimestamp($news['created_at'] / 1000);
+                                                echo $date->format('Y-m-d H:i:s');
+                                            } else {
+                                                echo "Invalid Date Format";
+                                            }
+                                        } else {
+                                            echo "Date Not Set";
+                                        }
+                                        ?>
+                                    </small>
+                                </p>
+                                <a href="detail.php?id=<?= $news['_id'] ?>" class="btn btn-custom btn-sm">Continue Reading</a>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+
+        <!-- CATEGORY -->
+        <div class="row category-main">
+            <div class="d-flex align-items-center mb-5">
+                <div class="flex-grow-1 border-top border-2"></div>
+                <h1 class="px-3">Category</h1>
+                <div class="flex-grow-1 border-top border-2"></div>
+            </div>
+            <div class="row">
+                <?php foreach ($categoryArray as $category): ?>
+                    <div class="col-md-3">
+                        <div class="category-card">
+                            <?php if (!empty($category['image_url'])): ?>
+                                <img src="<?= htmlspecialchars($category['image_url']) ?>" alt="Category Image" class="category-image">
+                            <?php else: ?>
+                                <img src="https://via.placeholder.com/400x300" alt="Placeholder Image" class="category-image">
+                            <?php endif; ?>
+                            <div class="category-overlay">
+                                <h5 class="category-title"><?= htmlspecialchars($category['name']) ?></h5>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+    <?php include 'partials/footer.php'; ?>

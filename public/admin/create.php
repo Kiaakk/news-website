@@ -1,5 +1,5 @@
 <?php
-require_once '../../app/db.php'; 
+require_once '../../app/db.php';
 
 use MongoDB\BSON\UTCDateTime;
 
@@ -12,7 +12,7 @@ if (!isset($_SESSION['admin'])) {
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $db = connectMongoDB();
-    $collection = $db->NewsOne; 
+    $collection = $db->NewsOne;
 
     // Get form data
     $title = $_POST['title'];
@@ -46,41 +46,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create News</title>
-</head>
+<?php
+include '../partials/cdn.php';
+?>
+<title>Dashboard</title>
 
 <body>
-    <h1>Create News</h1>
-    <?php if (isset($error)): ?>
-        <p style="color: red;"><?= $error ?></p>
-    <?php endif; ?>
-    <form method="POST">
-        <label for="title">Title</label>
-        <input type="text" id="title" name="title" required><br><br>
+    <?php
+    include '../partials/navbar.php';
+    ?>
+    <div class="d-flex">
 
-        <label for="content">Content</label><br>
-        <textarea id="content" name="content" rows="4" cols="50" required></textarea><br><br>
+        <?php
+        include '../partials/sidebar.php';
+        ?>
 
-        <label for="summary">Summary</label>
-        <input type="text" id="summary" name="summary" required><br><br>
+        <div class="flex-grow-1 p-4">
+            <p class="text-muted">Let's share the latest update, Admin!</p>
 
-        <label for="category">Category</label>
-        <input type="text" id="category" name="category" required><br><br>
-
-        <label for="author">Author</label>
-        <input type="text" id="author" name="author" required><br><br>
-
-        <label for="image">Image URL</label>
-        <input type="text" id="image" name="image" required><br><br>
-
-        <button type="submit">Create</button>
-    </form>
+            <div class="container">
+                <?php
+                include '../partials/form.php';
+                ?>
+                <div class="d-flex justify-content-end mb-4">
+                    <button type="button" class="btn btn-dark">Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
-
-</html>
