@@ -80,10 +80,6 @@ include '../partials/cdn.php';
                 </div>
             </div>
             <div class="container">
-                <?php
-                include '../partials/table.php';
-                ?>
             </div>
         </div>
-    </div>
 </body>
